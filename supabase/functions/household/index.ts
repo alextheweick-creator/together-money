@@ -28,7 +28,7 @@ async function sync(household:string){const items=await checked(admin.from('bank
  finally{await checked(admin.from('bank_items').update({lock_until:null}).eq('id',item.id).eq('household_id',household).eq('lock_until',lockedUntil));}}
  return {count,errors};
 }
-Deno.serve(async request=>{
+async function handleRequest(request:Request){
  if(request.method!=='POST')return reply({error:'POST required'},405);
  try{
  const token=request.headers.get('Authorization')?.replace(/^Bearer /,'');if(!token)return reply({error:'Please sign in.'},401);
@@ -62,5 +62,15 @@ Deno.serve(async request=>{
  if(action==='bank/disconnect'){const item=await checked(admin.from('bank_items').select('*').eq('id',body.itemId).eq('household_id',hid).eq('payer',member.role).single());await plaid('/item/remove',{access_token:await decrypt(item.token)});await checked(admin.from('bank_items').delete().eq('id',item.id).eq('household_id',hid));return reply({ok:true});}
  return reply({error:'Unknown action'},400);
  }catch(error){return reply({error:error instanceof z.ZodError?'Check the information and try again.':error instanceof Error?error.message:'The request could not complete.'},400);}
+}
+const allowedOrigins=new Set(['https://alextheweick-creator.github.io','http://127.0.0.1:5180','http://localhost:5180']);
+Deno.serve(async request=>{
+ const origin=request.headers.get('Origin');
+ if(origin&&!allowedOrigins.has(origin))return reply({error:'Origin not allowed'},403);
+ const response=request.method==='OPTIONS'?new Response(null,{status:204}):await handleRequest(request);
+ if(origin)response.headers.set('Access-Control-Allow-Origin',origin);
+ response.headers.set('Vary','Origin');
+ response.headers.set('Access-Control-Allow-Methods','POST, OPTIONS');
+ response.headers.set('Access-Control-Allow-Headers','authorization, apikey, content-type, x-client-info');
+ return response;
 });
-

@@ -1,79 +1,51 @@
 # Together
 
-An independent Windows and macOS desktop app for a short, shared daily money check-in. No ChatGPT login is used.
+An independent browser-installed app for a shared daily money check-in on Windows and macOS. No ChatGPT login or Apple Developer membership required.
+
+## Install
+Open https://alextheweick-creator.github.io/together-money/ in Chrome or Edge and use Install app. Each person uses their own Together email/password account. One person creates a household and gives its one-use, 24-hour invite code to their partner.
+
+Supabase's default email service restricts recipients. Configure custom SMTP for self-signup, or create the two confirmed accounts in Supabase Authentication > Users. Never send passwords or secret keys through chat or commit them here.
 
 ## Daily workflow
-- The review inbox contains **every unreviewed transaction**, oldest first, regardless of age.
-- Missed days accumulate. “Done for today” records a check-in without clearing unfinished work.
-- Confirm purchase, refund, income, transfer, or repayment; select a category and each person's percentage.
-- Approved transactions drive monthly budgets, category charts, cumulative spending, and the all-history balance between partners.
-- Pending bank transactions wait for posting before review. Bank corrections re-open affected reviews.
-- Transfers and card payments do not inflate spending. A repayment appearing in both connected accounts must be counted once: categorize one side as repayment and its matching side as transfer.
-- Amounts are stored in integer cents. Split rounding always preserves the original total.
+- Every unreviewed transaction stays in the inbox, oldest first, even after missed days.
+- Done for today records a check-in without clearing unfinished work.
+- Review purchase, refund, income, transfer, or repayment; choose a category and each person's share.
+- Reports and budgets use reviewed transactions. Balances distinguish who paid from whose expense it was.
+- Pending transactions wait for posting. Bank corrections reopen affected reviews.
+- Transfers and card payments do not inflate spending. For a repayment appearing in both accounts, mark one side repayment and its matching side transfer.
+- Amounts use integer cents with exact allocation of rounding.
+- Reminders require notification permission and the app to remain open; they stop when you close it.
 
-## Install and sign in
-Get installers from this repository's Releases page. Each person has a separate email/password login. The first person creates the household and gives its one-use, 24-hour invite code to their partner.
+## Privacy
+Financial data lives in the private Supabase database. GitHub Pages serves public code and public connection settings. The service worker caches only static interface files, never financial or authentication responses. Internet is required. Sample mode is disposable and does not save.
 
-The household data lives in your Supabase project, not on ChatGPT. Internet is required for real data. Sample mode uses disposable, clearly labeled data and does not save. Authentication tokens are encrypted by the operating system's secure storage. Bank credentials are entered in Plaid's hosted flow in your browser; long-lived Plaid tokens remain encrypted on the server.
+Authentication persists in your browser profile. Bank credentials go through Plaid Hosted Link; bank access tokens are encrypted on the server. The household function validates Supabase authentication and membership for every request. Direct table access is denied to browser roles. Its verify_jwt=false setting disables only the legacy gateway check; authentication is enforced inside the function.
 
-**Current release limitations:** Windows test builds are not publisher-signed. macOS distribution and built-in automatic updates need Apple Developer signing and notarization before a supported Mac release can be published. Live Plaid syncing requires credentials and Trial or Production access; without them, manual transactions and sample mode work.
+## Plaid
+Set Supabase Edge Function secrets:
+- PLAID_CLIENT_ID
+- PLAID_SECRET (Production secret for real banks)
+- PLAID_ENV=production (sandbox is only for fake test banks)
+- TOKEN_ENCRYPTION_KEY: 32 random bytes as base64. Already set for this deployment. Keep it stable; replacing it without re-encrypting existing tokens breaks bank connections.
 
-## Household service
-1. Create a Supabase project.
-2. Authenticate the official Supabase CLI.
-3. Link the project, apply `supabase/migrations`, and deploy the `household` function:
-   ```sh
-   npx supabase link --project-ref YOUR_PROJECT
-   npx supabase db push
-   npx supabase functions deploy household --use-api
-   ```
-4. Keep the function's `verify_jwt = false` configuration. This disables the legacy gateway JWT check only; the function **independently validates every request with Supabase Auth getUser** and checks household membership. Financial tables deny direct access to anon and authenticated roles. Only the authenticated function uses the server-side service role.
-5. Configure email authentication. Supabase's built-in email service may restrict recipients; for this two-person app you can create confirmed users in Authentication > Users, or configure custom SMTP for self-signup and password recovery. No paid Supabase tier is required merely for two users.
-6. Set app public configuration as shown in `desktop/service.example.json`. The publishable key is not a server secret. Never include service-role, Plaid, signing, or GitHub tokens in the app.
+Each person connects their own institutions while signed in. USD only. Do not connect a joint account twice. Each institution connection has one assigned payer. Opening the app or pressing Sync retrieves transactions; sync does not run while both apps are closed. Accumulated history is retrieved on the next sync. Visible household state refreshes every 30 seconds. Disconnect banks before changing Plaid environments.
 
-Free-tier projects can pause during inactivity. Maintain separate database backups. Your backlog remains in the database; it does not depend on daily app use.
+## Development and updates
+Node 24:
 
-## Plaid setup
-Set these **Supabase Edge Function secrets**, not desktop settings:
-- `PLAID_CLIENT_ID`
-- `PLAID_SECRET`
-- `PLAID_ENV=production` for real banks, or `sandbox` for test data
-- `TOKEN_ENCRYPTION_KEY`: 32 random bytes encoded as base64. Set once and keep it stable. Rotating it without re-encrypting tokens breaks existing bank connections.
-
-The initial deployment configured the encryption key already. Do not overwrite it.
-
-Each person connects their own bank while signed into their own app account. The app opens Plaid Hosted Link in the system browser and polls for completion. USD accounts only; connect each account once and do not connect a joint account twice. Each connected institution is assigned one owner in this first version. Transactions sync on app opening and on demand, not continuously while both apps are closed. Plaid's cursor sync retrieves the accumulated history at the next check-in. State refreshes every 30 seconds while the app is visible.
-
-Sandbox and Production use separate tokens. Do not switch an existing household's Plaid environment after connecting banks; disconnect those connections first.
-
-## Development
-Node 24 and npm:
 ```sh
 npm ci
 npm test
 npm run build
-npm start
+npx vite preview --host 127.0.0.1 --port 5180
 ```
-`npm run dev` runs a browser preview of sample mode. Native sign-in, secure credentials, notifications, and updater APIs only exist in Electron.
 
-`npm run dist:win` produces an NSIS installer. `npm run dist:mac` must run on macOS with signing/notarization configured for a supported release.
+Build configuration comes from SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, or ignored local desktop/service.json (see its example). Only publishable keys are accepted. Never bundle service-role or Plaid secrets. An optional Electron wrapper remains in source, but browser installation is the supported delivery path.
 
-## Patches and automatic updates
-The source is in this repository. Ask your coding assistant to open this repository and make a patch; it needs GitHub publishing authorization, not access to your bank password.
+Pushing tested changes to main publishes via GitHub Pages. Increment the package version for patches. Open installations check on focus or hourly and show Update available / Apply. Applying reloads; save unfinished edits first. Running check-ins are not silently interrupted. Closed apps may start directly on the latest release when reopened.
 
-1. Implement the patch, run tests, and increment `package.json` and the lockfile version.
-2. Build Windows and Mac installers. The supplied GitHub Actions workflow runs on tags `v*`.
-3. Review the draft release and publish it only after its installers and update manifests have finished uploading.
-4. Running apps check on launch, focus, and hourly. The banner says **Update available**. Download it, then choose **Restart & install**. It does not silently interrupt an unfinished review.
-5. Database migrations and Edge Function changes deploy separately; use additive migrations compatible with the previous client before publishing a new client.
-
-Repository variables: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
-Mac release secrets: `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`.
-`CSC_LINK` contains or refers to a Developer ID Application certificate exported as .p12. Do not commit it.
-GitHub's workflow token is used only during release publishing, never installed on either computer. Code and installers are public; private financial records and secrets are not in this repository.
-
-Mac release publishing deliberately stops if signing credentials are missing. Windows unsigned builds are suitable for evaluating the app, but publisher signing is recommended before wider distribution.
+Backend migrations and Edge Functions deploy separately. Keep changes compatible with the previous client. Browser origins are explicit in supabase/functions/household/index.ts; auth redirects are in supabase/config.toml. Free projects may pause after inactivity. Maintain independent database backups.
 
 ## Verification
-Automated tests cover money allocation, refunds, repayments, pending/removed transactions, monthly reports, one-use invites, two-person household limits, direct-table denial, stale edits, persistent backlog, idempotent imports, and atomic cursor advancement. The initial hosted service was also checked with isolated temporary users, then cleaned up. Real bank connections and Mac installation require their respective external setup before end-to-end validation.
-
+Tests cover expense allocation, refunds, repayments, reviewed-only reports, persistent backlog, invitations, direct-table denial, stale edits, pending transactions, idempotent imports, and atomic sync cursors. The hosted service was tested with isolated temporary users and cleaned up. Real bank linking must be completed by each owner. Mac installation needs verification on a Mac.

@@ -1,4 +1,7 @@
 project_id = "together-money"
+[auth]
+site_url = "https://alextheweick-creator.github.io/together-money/"
+additional_redirect_urls = ["https://alextheweick-creator.github.io/together-money/"]
 [functions.household]
 verify_jwt = false
 

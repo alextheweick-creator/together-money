@@ -1,0 +1,4 @@
+project_id = "together-money"
+[functions.household]
+verify_jwt = false
+

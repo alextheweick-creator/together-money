@@ -1,0 +1,13 @@
+node_modules/
+dist/
+release/
+.env*
+!\.env.example
+desktop/service.json
+*.p12
+*.pfx
+*.pem
+.DS_Store
+work/
+
+supabase/.temp/

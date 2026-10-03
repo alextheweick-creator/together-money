@@ -1,0 +1,41 @@
+appId: com.togethermoney.desktop
+productName: Together
+directories:
+  output: release
+files:
+  - dist/**/*
+  - desktop/**/*
+  - package.json
+  - build/icon.png
+asar: true
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+mac:
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  category: public.app-category.finance
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  notarize: true
+artifactName: Together-${version}-${os}-${arch}.${ext}
+
+publish:
+  provider: github
+  owner: alextheweick-creator
+  repo: together-money
+  releaseType: draft
+

@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {shares,summarize} from '../src/money.ts';
+const t=(id,amount,payer='you',other={})=>({id,amount,payer,date:'2026-09-20',kind:'expense',category:'Groceries',share:50,note:'',reviewed:1,pending:0,source:'manual',account:'Test',...other});
+test('Separate who paid from whose share; transfers never inflate spending',()=>{const records=[t('a',12000),t('b',8000,'partner'),t('c',-2000,'you',{kind:'settlement'}),t('d',2000,'partner',{kind:'transfer'}),t('e',-285000,'you',{kind:'income'})];const s=summarize(records);assert.equal(s.spending,20000);assert.equal(s.you,10000);assert.equal(s.partner,10000);assert.equal(s.balance,0);assert.equal(s.income,285000);});
+test('Odd cents are allocated exactly once; refunds reduce the original share',()=>{assert.deepEqual(shares(t('a',101)),{you:51,partner:50});const s=summarize([t('a',10000),t('b',-3000,'you',{kind:'refund'})]);assert.equal(s.spending,7000);assert.equal(s.balance,3500);});
+test('Backlog, pending, and removed transactions never enter approved reports',()=>{const s=summarize([t('a',10000,'you',{reviewed:0}),t('b',10000,'you',{pending:1}),t('c',10000,'you',{removed:1})]);assert.equal(s.spending,0);assert.equal(s.balance,0);});
+test('Monthly charts filter by transaction date; shared balance spans all history',()=>{const s=summarize([t('old',10000),t('new',20000,'partner',{date:'2026-10-03'})],'2026-10');assert.equal(s.spending,20000);assert.equal(s.balance,-5000);});
+test('Personal expense paid by partner creates the correct reimbursement',()=>{const s=summarize([t('x',4500,'partner',{share:100})]);assert.equal(s.you,4500);assert.equal(s.partner,0);assert.equal(s.balance,-4500);});
+

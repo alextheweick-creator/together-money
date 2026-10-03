@@ -13,6 +13,7 @@ export function summarize(ts:Transaction[],month?:string){
  for(const t of approved){if(t.kind==='income'&&(!month||t.date.startsWith(month)))totals.income-=t.amount;if(t.kind==='expense'||t.kind==='refund')totals.balance+=(t.payer==='you'?t.amount:0)-shares(t).you;if(t.kind==='settlement')totals.balance+=t.payer==='you'?t.amount:-t.amount;}
  return totals;
 }
+export function reviewQueue(transactions:Transaction[]){return transactions.filter(t=>!t.reviewed&&!t.pending&&!t.removed).sort((a,b)=>b.date.localeCompare(a.date)||a.id.localeCompare(b.id));}
 export function localDay(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 export function samples():Transaction[]{const day=(ago:number)=>{const d=new Date();d.setDate(d.getDate()-ago);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};return [
 {id:'demo-1',date:day(3),merchant:'Neighborhood Market',amount:12000,payer:'you',kind:'expense',category:'Groceries',share:50,reviewed:0},

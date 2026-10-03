@@ -1,6 +1,6 @@
 {
   "name": "together-money",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A daily money check-in for two",
   "private": true,
   "type": "module",

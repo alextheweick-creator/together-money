@@ -8,7 +8,7 @@ Open https://alextheweick-creator.github.io/together-money/ in Chrome or Edge an
 Supabase's default email service restricts recipients. Configure custom SMTP for self-signup, or create the two confirmed accounts in Supabase Authentication > Users. Never send passwords or secret keys through chat or commit them here.
 
 ## Daily workflow
-- Every unreviewed transaction stays in the inbox, oldest first, even after missed days.
+- Each newly connected bank starts with the previous 48 hours (including the boundary date when the bank supplies no time). Older unreviewed history stays stored outside the queue. New bank arrivals join batches on a shared 24-hour schedule. Released, unreviewed transactions remain indefinitely, newest first, even after missed days. Manual entries enter immediately.
 - Done for today records a check-in without clearing unfinished work.
 - Review purchase, refund, income, transfer, or repayment; choose a category and each person's share.
 - Reports and budgets use reviewed transactions. Balances distinguish who paid from whose expense it was.
@@ -29,7 +29,7 @@ Set Supabase Edge Function secrets:
 - PLAID_ENV=production (sandbox is only for fake test banks)
 - TOKEN_ENCRYPTION_KEY: 32 random bytes as base64. Already set for this deployment. Keep it stable; replacing it without re-encrypting existing tokens breaks bank connections.
 
-Each person connects their own institutions while signed in. USD only. Do not connect a joint account twice. Each institution connection has one assigned payer. Opening the app or pressing Sync retrieves transactions; sync does not run while both apps are closed. Accumulated history is retrieved on the next sync. Visible household state refreshes every 30 seconds. Disconnect banks before changing Plaid environments.
+Each person connects their own institutions while signed in. USD only. Do not connect a joint account twice. Each institution connection has one assigned payer. Opening the app, reaching a daily batch boundary while open, or pressing Sync retrieves transactions; sync does not run while both apps are closed. Accumulated history is retrieved on the next sync. Visible household state refreshes every 30 seconds. Disconnect banks before changing Plaid environments.
 
 ## Development and updates
 Node 24:

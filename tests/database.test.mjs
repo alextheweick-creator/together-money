@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {PGlite} from '@electric-sql/pglite';
 const migration=await fs.readFile(new URL('../supabase/migrations/202610030001_household.sql',import.meta.url),'utf8');
-const db=new PGlite();await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;');await db.exec(migration);
+const db=new PGlite();await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;');await db.exec(migration);await db.exec(await fs.readFile(new URL('../supabase/migrations/202610030002_daily_review.sql',import.meta.url),'utf8'));
 const user='11111111-1111-4111-8111-111111111111',partner='22222222-2222-4222-8222-222222222222',stranger='33333333-3333-4333-8333-333333333333';
 const settings={you:'Alex',partner:'Sam',defaultShare:50,budgets:{Groceries:60000}};
 const hid=(await db.query('SELECT create_household($1,$2,$3) AS id',[user,settings,'invite-hash'])).rows[0].id;
